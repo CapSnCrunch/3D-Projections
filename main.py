@@ -1,5 +1,8 @@
 import pygame
+import pickle
 import numpy as np
+
+# TODO Fix rotations, forgot they aren't commutative in 3D :(
 
 width = 750
 height = 750
@@ -66,9 +69,11 @@ def proj(u, vx, vy):
 def redraw_window(win, polyhedra):
     win.fill((250, 250, 250))
 
-    reference_rotate = [2*np.pi/200, 0, 2*np.pi/182]
-    # reference_rotate = [2*np.pi/150, 0, 0]
-    # polyhedra_rotate = [2*np.pi/150, 0, 0]
+    # reference_rotate = [2*np.pi/200, 0, 2*np.pi/182]
+    # reference_rotate = [0, 2*np.pi/850, 2*np.pi/1000]
+    reference_rotate = [0, 0, 2*np.pi/1000]
+
+    # polyhedra_rotate = [2*np.pi/200, 0, 0]
     polyhedra_rotate = [0, 0, 0]
 
     for i in range(len(vectors)):
@@ -85,12 +90,14 @@ def redraw_window(win, polyhedra):
 
     pygame.display.update()
 
+with open('polyhedra.pkl', 'rb') as input:
+    Tetrahedron = pickle.load(input)
+    Tetrahedron2 = pickle.load(input)
+    Cube = pickle.load(input)
+
 def main():
     run = True
     clock = pygame.time.Clock()
-
-    Cube = Poly((0,0,0), [[-1,-1,-1], [-1,1,-1], [1,1,-1], [1,-1,-1], [-1,-1,1], [-1,1,1], [1,1,1], [1,-1,1]], 
-                          [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]])
 
     while run:
         clock.tick(30)
@@ -99,7 +106,9 @@ def main():
                 run = False
                 pygame.quit()
 
-        redraw_window(win, [Cube])
+        redraw_window(win, [Cube, Tetrahedron2])
 
 if __name__ == '__main__':
     main()
+else:
+    pass
