@@ -27,18 +27,15 @@ class Poly():
         for p in points:
             self.vertices.append(np.array(p))
     
-    def draw(self, win):
-        #for i in range(len(self.vertices)):
-        #    for j in range(i, len(self.vertices)):
-        
+    def draw(self, win, reference):
         for e in self.edges:
             x1, y1 = proj(self.vertices[e[0]] * scale, reference[0], reference[1])
             x2, y2 = proj(self.vertices[e[1]] * scale, reference[0], reference[1])
             pygame.draw.line(win, self.color, (origin[0] + int(x1), origin[1] + int(y1)), (origin[0] + int(x2), origin[1] + int(y2)), 1)
     
-    def rotate(self, r):
+    def rotate(self, axis, theta):
         for i in range(len(self.vertices)):
-            self.vertices[i] = rotate(self.vertices[i], r)
+            self.vertices[i] = rotate(self.vertices[i], axis, theta)
 
 def rotate_x(u, theta):
     R = np.array([[1, 0, 0], [0, np.cos(theta), -np.sin(theta)], [0, np.sin(theta), np.cos(theta)]])
@@ -52,8 +49,27 @@ def rotate_z(u, theta):
     R = np.array([[np.cos(theta), -np.sin(theta), 0], [np.sin(theta), np.cos(theta), 0], [0, 0, 1]])
     return R.dot(u)
 
-def rotate(u, r):
-    return rotate_x(rotate_y(rotate_z(u, r[2]), r[1]), r[0])
+def rotate(u, axis, theta):
+    A, B, C = axis
+    V = (B**2 + C**2)**(1/2)
+    L = (A**2 + B**2 + C**2)**(1/2)
+
+    try:
+        # Rotate into x-z Plane and then onto z-axis
+        v = rotate_y(rotate_x(u, np.arcsin(B/V)), np.arcsin(-A/L))
+        
+        # Rotate around 'L-axis'
+        v = rotate_z(v, theta)
+
+        # Reverse intial rotations
+        v = rotate_x(rotate_y(v, np.arcsin(A/L)), np.arcsin(-B/V))
+
+    except:
+        v = rotate_x(u, theta)
+
+    return v
+
+    # return rotate_x(rotate_y(rotate_z(u, r[2]), r[1]), r[0])
 
 def proj(u, vx, vy):
     # Normal Vector of Plane
@@ -69,24 +85,21 @@ def proj(u, vx, vy):
 def redraw_window(win, polyhedra):
     win.fill((250, 250, 250))
 
-    # reference_rotate = [2*np.pi/200, 0, 2*np.pi/182]
-    # reference_rotate = [0, 2*np.pi/850, 2*np.pi/1000]
-    reference_rotate = [0, 0, 2*np.pi/1000]
+    reference_rotate = -2*np.pi/1000
+    reference_rotate = 0
+    polyhedra_rotate = 2*np.pi/1000
 
-    # polyhedra_rotate = [2*np.pi/200, 0, 0]
-    polyhedra_rotate = [0, 0, 0]
-
-    for i in range(len(vectors)):
+    for i in range(len(reference)):
         # Rotate Reference
-        vectors[i] = rotate(vectors[i], reference_rotate)
-
+        reference[i] = rotate(reference[i], [0,0,1], reference_rotate)
+    
+    for i in range(len(vectors)):
         x, y = proj(vectors[i] * scale, reference[0], reference[1])
         pygame.draw.line(win, colors[i], origin, (origin[0] + int(x), origin[1] + int(y)), 2)
     
     for p in polyhedra:
-        p.rotate(reference_rotate)
-        p.rotate(polyhedra_rotate)
-        p.draw(win)
+        p.rotate([0,1,0], polyhedra_rotate)
+        p.draw(win, reference)
 
     pygame.display.update()
 
@@ -106,7 +119,7 @@ def main():
                 run = False
                 pygame.quit()
 
-        redraw_window(win, [Cube, Tetrahedron2])
+        redraw_window(win, [Cube])
 
 if __name__ == '__main__':
     main()
